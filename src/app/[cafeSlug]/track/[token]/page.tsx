@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getCafeBySlug } from "@/lib/cafe";
 import { serviceClient } from "@/lib/supabase/service";
 import { formatCents } from "@/lib/pricing";
+import { appleWalletConfigured, googleWalletConfigured } from "@/lib/env";
 import type { Enums } from "@/types/supabase";
 
 const STATUS_LABEL: Record<Enums<"order_status">, string> = {
@@ -99,6 +100,28 @@ export default async function TrackPage({
           </span>
         </div>
       </div>
+
+      {(appleWalletConfigured() || googleWalletConfigured()) && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h3 style={{ marginTop: 0 }}>Votre carte de fidélité</h3>
+          <p className="muted" style={{ fontSize: "0.9rem" }}>
+            Ajoutez votre carte au Wallet : vos points se mettent à jour tout
+            seuls, présentez-la en boutique pour vos récompenses.
+          </p>
+          <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+            {appleWalletConfigured() && (
+              <a className="btn" href={`/api/wallet/apple/${token}`}>
+                 Ajouter à Apple Wallet
+              </a>
+            )}
+            {googleWalletConfigured() && (
+              <a className="btn btn-ghost" href={`/api/wallet/google/${token}`}>
+                Ajouter à Google Wallet
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       <p className="muted" style={{ fontSize: "0.85rem" }}>
         Astuce : cette page se rafraîchit à chaque visite. Gardez le lien pour

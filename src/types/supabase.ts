@@ -272,6 +272,30 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["points_ledger"]["Insert"]>;
         Relationships: [];
       };
+      apple_wallet_registrations: {
+        Row: {
+          id: string;
+          cafe_id: string;
+          customer_id: string;
+          pass_serial: string;
+          device_library_id: string;
+          push_token: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cafe_id: string;
+          customer_id: string;
+          pass_serial: string;
+          device_library_id: string;
+          push_token: string;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["apple_wallet_registrations"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {
