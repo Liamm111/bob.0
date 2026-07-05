@@ -1,0 +1,26 @@
+# Configuration Supabase CLI — Café Brume
+# `supabase start` (Docker requis) lance Postgres + Auth + Realtime en local,
+# applique supabase/migrations/*.sql puis supabase/seed.sql.
+project_id = "cafe-brume"
+
+[db]
+port = 54322
+major_version = 16
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+# Staff uniquement : email + mot de passe. Aucun compte client.
+enable_signup = false
+enable_confirmations = false
+
+[auth.email]
+enable_signup = false
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true

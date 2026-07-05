@@ -1,0 +1,41 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# env — never commit real secrets
+.env
+.env*.local
+.env.local
+
+# supabase
+/supabase/.branches
+/supabase/.temp
+
+# testing / coverage
+/coverage
+
+# vercel / sentry
+.vercel
+.sentryclirc
+
+# certs (Apple Wallet, Google service account) — never commit
+/certs
+*.p12
+*.pkpass
+service-account*.json
+
+# logs
+*.log
