@@ -1,0 +1,129 @@
+:root {
+  /* Valeurs neutres par défaut ; surchargées par les brand_tokens du café. */
+  --brand-primary: #2f3a33;
+  --brand-accent: #c9a26b;
+  --brand-bg: #f6f3ee;
+  --brand-fg: #1c1c1c;
+  --brand-muted: #6b6b6b;
+  --brand-surface: #ffffff;
+  --brand-border: #e6e0d6;
+  --radius: 14px;
+  --maxw: 960px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--brand-bg);
+  color: var(--brand-fg);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+.container {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--brand-primary);
+  color: #fff;
+  transition: opacity 0.15s ease;
+}
+.btn:hover {
+  opacity: 0.9;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-accent {
+  background: var(--brand-accent);
+  color: #1c1c1c;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--brand-fg);
+  border: 1px solid var(--brand-border);
+}
+
+.card {
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-border);
+  color: var(--brand-muted);
+}
+
+.muted {
+  color: var(--brand-muted);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--brand-border);
+  border-radius: 10px;
+  font-size: 1rem;
+  background: #fff;
+  color: var(--brand-fg);
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}

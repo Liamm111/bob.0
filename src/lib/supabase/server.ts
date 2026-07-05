@@ -1,5 +1,5 @@
 import "server-only";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
 import { env } from "@/lib/env";
@@ -18,7 +18,13 @@ export async function staffClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(
+        cookiesToSet: {
+          name: string;
+          value: string;
+          options: CookieOptions;
+        }[],
+      ) {
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options),
@@ -28,15 +34,5 @@ export async function staffClient() {
         }
       },
     },
-  });
-}
-
-/**
- * Client Supabase anon (sans session) — pour les RPC publiques grantées à
- * `anon`, comme `get_order_by_token` (suivi de commande sans login).
- */
-export function anonClient() {
-  return createServerClient<Database>(env.supabaseUrl(), env.supabaseAnonKey(), {
-    cookies: { getAll: () => [], setAll: () => {} },
   });
 }

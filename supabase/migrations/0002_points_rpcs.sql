@@ -240,3 +240,9 @@ grant execute on function confirm_order_paid(uuid, text) to service_role;
 grant execute on function redeem_reward(uuid, uuid) to service_role, authenticated;
 grant execute on function adjust_points(uuid, int) to service_role, authenticated;
 grant execute on function expire_points() to service_role;
+
+-- get_order_by_token (défini dans 0001, grantée à anon/authenticated) est aussi
+-- appelée côté serveur avec le service role pour le suivi de commande : on lui
+-- accorde l'exécution. La fonction reste SECURITY DEFINER et ne renvoie QUE la
+-- commande ciblée par le token.
+grant execute on function get_order_by_token(uuid) to service_role;
