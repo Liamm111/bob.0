@@ -25,6 +25,14 @@ const CheckoutSchema = z.object({
   cafeSlug: z.string().min(1),
   name: z.string().trim().min(1, "Prénom requis").max(80),
   phone: z.string().min(3, "Téléphone requis").max(30),
+  // Email FACULTATIF (le minimum requis reste prénom + téléphone). S'il est
+  // fourni, on envoie les emails transactionnels (confirmation, prête…).
+  email: z
+    .string()
+    .trim()
+    .email("Email invalide")
+    .optional()
+    .or(z.literal("")),
   marketingConsent: z.boolean().default(false),
   pickupSlotIso: z.string().datetime(),
   cart: z.array(CartLineSchema).min(1, "Panier vide"),
@@ -114,6 +122,7 @@ export async function checkout(raw: CheckoutInput): Promise<CheckoutResult> {
     e164: phone.e164,
     display: phone.display,
     name: input.name,
+    email: input.email ? input.email : null,
     marketingConsent: input.marketingConsent,
   });
 

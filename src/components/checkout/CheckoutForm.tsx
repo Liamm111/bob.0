@@ -38,6 +38,7 @@ export function CheckoutForm({
   const cart = useCart();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [marketing, setMarketing] = useState(false);
   const [slot, setSlot] = useState(availableSlots[0] ?? "");
   const [submitting, setSubmitting] = useState(false);
@@ -64,6 +65,7 @@ export function CheckoutForm({
       cafeSlug,
       name,
       phone,
+      email,
       marketingConsent: marketing,
       pickupSlotIso: slot,
       cart: cart.lines.map((l) => ({
@@ -175,6 +177,17 @@ export function CheckoutForm({
         <small className="muted">
           Sert à retrouver votre carte de fidélité. Aucun mot de passe.
         </small>
+      </div>
+      <div className="field">
+        <label htmlFor="email">Email (facultatif)</label>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          placeholder="pour recevoir la confirmation"
+        />
       </div>
 
       <div className="field">

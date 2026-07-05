@@ -1,5 +1,6 @@
 import "server-only";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
 import { env } from "@/lib/env";
@@ -10,10 +11,15 @@ import { env } from "@/lib/env";
  * Utilise la clé anon + la session du staff : toutes les requêtes passent
  * par la RLS (table `staff` + `is_cafe_staff`). Un membre ne voit donc que
  * SON café. C'est le client utilisé dans le back-office `/admin`.
+ *
+ * NB : `@supabase/ssr` ne propage pas le générique `Database` au typage des
+ * requêtes `.from()/.rpc()` (versions internes de postgrest-js divergentes).
+ * On caste vers `SupabaseClient<Database>` de `@supabase/supabase-js` — le
+ * runtime est identique (createServerClient enveloppe createClient).
  */
-export async function staffClient() {
+export async function staffClient(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
-  return createServerClient<Database>(env.supabaseUrl(), env.supabaseAnonKey(), {
+  const client = createServerClient<Database>(env.supabaseUrl(), env.supabaseAnonKey(), {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -35,4 +41,5 @@ export async function staffClient() {
       },
     },
   });
+  return client as unknown as SupabaseClient<Database>;
 }
