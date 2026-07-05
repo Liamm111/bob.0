@@ -14,6 +14,13 @@ export type SlotsConfig = Tables<"slots_config">;
 /** États de commande qui "tiennent" fermement une place. */
 const FIRM_SEAT_STATUSES = ["paid", "preparing", "ready"] as const;
 
+/**
+ * Règle métier : on ne commande que pour le JOUR MÊME et au plus 2 h à
+ * l'avance. (daysAhead = 1 → aujourd'hui uniquement ; plafond 120 min.)
+ */
+const MAX_ORDER_LEAD_MINUTES = 120;
+const SAME_DAY_ONLY = 1;
+
 async function getSlotsConfig(cafeId: string): Promise<SlotsConfig | null> {
   const { data, error } = await serviceClient()
     .from("slots_config")
@@ -74,7 +81,12 @@ export async function getAvailableSlots(
   if (!config) return { orderingOpen: false, slots: [] };
   if (!config.is_ordering_open) return { orderingOpen: false, slots: [] };
 
-  const times = generateSlotTimes(config as SlotsConfigLike, { now, timeZone });
+  const times = generateSlotTimes(config as SlotsConfigLike, {
+    now,
+    timeZone,
+    daysAhead: SAME_DAY_ONLY,
+    maxAheadMinutes: MAX_ORDER_LEAD_MINUTES,
+  });
   if (times.length === 0) return { orderingOpen: true, slots: [] };
 
   const taken = await getTakenByIso(cafeId, times[0]!, times[times.length - 1]!, now);
@@ -108,7 +120,12 @@ export async function isValidSlot(
 ): Promise<boolean> {
   const config = await getSlotsConfig(cafeId);
   if (!config) return false;
-  const times = generateSlotTimes(config as SlotsConfigLike, { now, timeZone });
+  const times = generateSlotTimes(config as SlotsConfigLike, {
+    now,
+    timeZone,
+    daysAhead: SAME_DAY_ONLY,
+    maxAheadMinutes: MAX_ORDER_LEAD_MINUTES,
+  });
   const target = new Date(pickupSlotIso).toISOString();
   return times.some((t) => new Date(t).toISOString() === target);
 }

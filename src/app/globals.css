@@ -1,3 +1,28 @@
+/* =========================================================
+   Polices de marque : Anaktoria (titres) + Gotham (texte & chiffres).
+   Ce sont des polices sous licence — déposez les fichiers dans
+   /public/fonts/ (voir public/fonts/README.md). Tant qu'ils sont absents,
+   on retombe proprement sur des piles serif/sans (aucune erreur de build).
+   ========================================================= */
+@font-face {
+  font-family: "Anaktoria";
+  src: url("/fonts/Anaktoria.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham";
+  src: url("/fonts/Gotham-Book.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham";
+  src: url("/fonts/Gotham-Medium.woff2") format("woff2");
+  font-weight: 600 700;
+  font-display: swap;
+}
+
 :root {
   /* Valeurs neutres par défaut ; surchargées par les brand_tokens du café. */
   --brand-primary: #2f3a33;
@@ -9,6 +34,12 @@
   --brand-border: #e6e0d6;
   --radius: 14px;
   --maxw: 960px;
+
+  /* Familles de marque (repli si les fichiers ne sont pas encore déposés). */
+  --font-title: "Anaktoria", "Iowan Old Style", "Palatino Linotype", Palatino,
+    Georgia, "Times New Roman", serif;
+  --font-body: "Gotham", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -24,11 +55,17 @@ body {
 body {
   background: var(--brand-bg);
   color: var(--brand-fg);
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-title);
+  font-weight: 500;
 }
 
 a {

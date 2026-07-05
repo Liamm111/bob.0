@@ -54,6 +54,26 @@ describe("génération de créneaux", () => {
     expect(gap).toBe(15 * 60_000);
   });
 
+  it("plafonne à 2 h à l'avance (jour même uniquement)", () => {
+    // now = 10:00 Zurich (08:00 UTC). Fenêtre : prep 20 min → 10:20,
+    // plafond +120 min → 12:00. Créneaux attendus : 10:30, 10:45 … 12:00.
+    const now = new Date("2026-07-06T08:00:00Z");
+    const times = generateSlotTimes(config, {
+      now,
+      timeZone: "Europe/Zurich",
+      daysAhead: 1,
+      maxAheadMinutes: 120,
+    });
+    expect(times.length).toBeGreaterThan(0);
+    const first = new Date(times[0]!).getTime();
+    const last = new Date(times[times.length - 1]!).getTime();
+    // Rien avant now+prep, rien après now+120min.
+    expect(first).toBeGreaterThanOrEqual(now.getTime() + 20 * 60_000);
+    expect(last).toBeLessThanOrEqual(now.getTime() + 120 * 60_000);
+    // Dernier créneau = 12:00 Zurich = 10:00 UTC.
+    expect(times[times.length - 1]).toBe("2026-07-06T10:00:00.000Z");
+  });
+
   it("propose plusieurs jours", () => {
     const now = new Date("2026-07-06T00:00:00Z");
     const oneDay = generateSlotTimes(config, { now, timeZone: "Europe/Zurich", daysAhead: 1 });

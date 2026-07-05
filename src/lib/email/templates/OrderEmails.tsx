@@ -129,7 +129,7 @@ export function OrderConfirmationEmail({
         Votre commande <strong>{order.orderNumber}</strong> est confirmée.
       </Text>
       <Text style={{ ...font, fontSize: 16 }}>
-        🕑 Retrait : <strong>{order.pickupLabel}</strong>
+        Retrait : <strong>{order.pickupLabel}</strong>
       </Text>
       <OrderLines order={order} />
       <Button
@@ -161,7 +161,7 @@ export function OrderReadyEmail({
   return (
     <Shell brand={brand} preview={`Commande ${order.orderNumber} prête`}>
       <Heading style={{ ...font, fontSize: 22, marginTop: 0 }}>
-        C'est prêt ! 🎉
+        C'est prêt !
       </Heading>
       <Text style={font}>
         Votre commande <strong>{order.orderNumber}</strong> vous attend au

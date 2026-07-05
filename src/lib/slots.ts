@@ -95,13 +95,19 @@ function parseHm(t: string): { h: number; m: number } {
 export type GenerateOptions = {
   now?: Date;
   timeZone: string;
-  /** Nombre de jours (incluant aujourd'hui) à proposer. Défaut 2. */
+  /** Nombre de jours (incluant aujourd'hui) à proposer. Défaut 1 (jour même). */
   daysAhead?: number;
+  /**
+   * Fenêtre maximale de réservation en avance, en minutes. Un créneau au-delà
+   * de `now + maxAheadMinutes` n'est pas proposé. Non défini = pas de plafond.
+   */
+  maxAheadMinutes?: number;
 };
 
 /**
  * Génère les instants de créneaux candidats (ISO UTC), filtrés par le délai
- * de préparation. Renvoie `[]` si la prise de commande est fermée (rush stop).
+ * de préparation ET par la fenêtre maximale de réservation. Renvoie `[]` si la
+ * prise de commande est fermée (rush stop).
  */
 export function generateSlotTimes(
   config: SlotsConfigLike,
@@ -110,9 +116,13 @@ export function generateSlotTimes(
   if (!config.is_ordering_open) return [];
 
   const now = opts.now ?? new Date();
-  const daysAhead = opts.daysAhead ?? 2;
+  const daysAhead = opts.daysAhead ?? 1;
   const tz = opts.timeZone;
   const earliest = new Date(now.getTime() + config.min_prep_minutes * 60_000);
+  const latest =
+    opts.maxAheadMinutes != null
+      ? new Date(now.getTime() + opts.maxAheadMinutes * 60_000)
+      : null;
 
   const open = parseHm(config.open_time);
   const close = parseHm(config.close_time);
@@ -133,9 +143,9 @@ export function generateSlotTimes(
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       const at = zonedWallTimeToUtc(dp.year, dp.month, dp.day, h, m, tz);
-      if (at.getTime() >= earliest.getTime()) {
-        times.push(at.toISOString());
-      }
+      if (at.getTime() < earliest.getTime()) continue;
+      if (latest && at.getTime() > latest.getTime()) continue;
+      times.push(at.toISOString());
     }
   }
 
