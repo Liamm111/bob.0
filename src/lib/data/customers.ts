@@ -72,6 +72,21 @@ export async function findOrCreateCustomer(
   return created;
 }
 
+/** Recherche par téléphone normalisé, scopé par café. `null` si absent. */
+export async function getCustomerByPhone(
+  cafeId: string,
+  e164: string,
+): Promise<Customer | null> {
+  const { data, error } = await serviceClient()
+    .from("customers")
+    .select("*")
+    .eq("cafe_id", cafeId)
+    .eq("phone_e164", e164)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function getCustomerById(id: string): Promise<Customer | null> {
   const { data, error } = await serviceClient()
     .from("customers")

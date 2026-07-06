@@ -1,6 +1,22 @@
 # PROGRESS — Café Brume · Click & Collect + Fidélité
 
-Suivi vivant. ✅ fait · 🚧 en cours · ⏳ à faire · ⚠️ point d'attention.
+Suivi vivant. fait / en cours / à faire / point d'attention.
+
+## Ajout — Fidélité en boutique (jour 2)
+- ✅ **Inscription self-service** : page publique `/[slug]/join` (prénom + tél + consentement)
+  → `enrollCustomer` (`src/actions/enroll.ts`) → carte + boutons Wallet. QR comptoir à
+  imprimer : `/[slug]/join/qr`.
+- ✅ **Émission Wallet par pass_serial** (hors commande) : `issueAppleForSerial` /
+  `issueGoogleForSerial` + endpoints `/api/wallet/{apple,google}/serial/[passSerial]`.
+  `mintPassSerial` attribue le serial sans figer la plateforme.
+- ✅ **Gain de points en caisse** (sans POS) : RPC `credit_purchase` (migration 0005,
+  `earn`, order_id null) ; écran back-office `/admin/loyalty` (téléphone → créer si absent →
+  montant → points auto → `syncPass`). Test DB inclus.
+- ⚠️ **POS** : non intégré (aucun POS choisi). `credit_purchase` est la couture : un POS
+  appellera la même RPC en V2.
+
+---
+
 
 Système mono-base, multi-café (`cafe_id`). Rien de spécifique à Brume codé en
 dur : tout vient de la base. Intégrations **env-gated** (voir `.env.example`).

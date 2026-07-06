@@ -134,6 +134,40 @@ begin
   raise notice 'OK expire_points: % client(s)', v_n;
 end$$;
 
+-- ---- credit_purchase : gain de points sur un achat en personne ----
+do $$
+declare r record; v_before int;
+begin
+  select points_balance into v_before from customers where id = 'd0000000-0000-0000-0000-000000000001';
+  -- Achat de 12.50 CHF (1250 cts), 1 pt/CHF → floor(12.50) = 12 pts.
+  select * into r from credit_purchase('d0000000-0000-0000-0000-000000000001', 1250);
+  if r.points_delta <> 12 then
+    raise exception 'FAIL credit_purchase: attendu 12 pts, obtenu %', r.points_delta;
+  end if;
+  if r.points_balance <> v_before + 12 then
+    raise exception 'FAIL credit_purchase: solde incohérent (% vs %)', r.points_balance, v_before + 12;
+  end if;
+  if not exists (select 1 from points_ledger
+                 where customer_id = 'd0000000-0000-0000-0000-000000000001'
+                   and reason = 'earn' and order_id is null and delta = 12) then
+    raise exception 'FAIL credit_purchase: ligne ledger earn (achat) manquante';
+  end if;
+  raise notice 'OK credit_purchase: +% pts, solde=%', r.points_delta, r.points_balance;
+end$$;
+
+-- ---- credit_purchase : montant invalide doit échouer ----
+do $$
+declare v_failed boolean := false;
+begin
+  begin
+    perform credit_purchase('d0000000-0000-0000-0000-000000000001', 0);
+  exception when others then v_failed := true; end;
+  if not v_failed then
+    raise exception 'FAIL credit_purchase: montant 0 accepté';
+  end if;
+  raise notice 'OK credit_purchase garde-fou montant invalide';
+end$$;
+
 -- =============================================================
 -- ISOLATION RLS : le staff de Brume ne voit QUE Brume.
 -- =============================================================

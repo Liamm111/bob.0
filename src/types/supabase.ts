@@ -327,6 +327,10 @@ export type Database = {
         Args: { p_customer_id: string; p_reward_id: string };
         Returns: { points_balance: number; spent: number }[];
       };
+      credit_purchase: {
+        Args: { p_customer_id: string; p_amount_cents: number };
+        Returns: { points_delta: number; points_balance: number }[];
+      };
       adjust_points: {
         Args: { p_customer_id: string; p_delta: number };
         Returns: { points_balance: number }[];

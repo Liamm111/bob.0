@@ -5,9 +5,15 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/staff";
 import { staffClient } from "@/lib/supabase/server";
 import { serviceClient } from "@/lib/supabase/service";
-import { getCustomerByPassSerial } from "@/lib/data/customers";
+import {
+  getCustomerByPassSerial,
+  getCustomerByPhone,
+  findOrCreateCustomer,
+} from "@/lib/data/customers";
+import { normalizePhone } from "@/lib/phone";
 import { sendOrderEmail } from "@/lib/email/send";
-import { syncPass } from "@/lib/wallet";
+import { syncPass, mintPassSerial } from "@/lib/wallet";
+import { appleWalletConfigured, googleWalletConfigured } from "@/lib/env";
 import type { Enums, TablesInsert } from "@/types/supabase";
 
 /**
@@ -241,6 +247,108 @@ export async function adjustPoints(
     p_delta: Math.trunc(delta),
   });
   if (error) return { ok: false, error: "Ajustement impossible (solde négatif ?)." };
+
+  await syncPass(customerId);
+  return { ok: true, newBalance: data?.[0]?.points_balance ?? 0 };
+}
+
+// ---------- Fidélité en caisse (gain de points en personne) ----------
+export type LoyaltyLookup =
+  | {
+      ok: true;
+      found: boolean;
+      e164: string;
+      display: string;
+      customer?: { id: string; name: string | null; points_balance: number };
+    }
+  | { ok: false; error: string };
+
+/** Recherche un client par téléphone dans le café du staff. */
+export async function findLoyaltyByPhone(phone: string): Promise<LoyaltyLookup> {
+  const staff = await requireStaff();
+  let n;
+  try {
+    n = normalizePhone(phone, staff.cafe.country_default);
+  } catch {
+    return { ok: false, error: "Numéro de téléphone invalide." };
+  }
+  const customer = await getCustomerByPhone(staff.cafe.id, n.e164);
+  return {
+    ok: true,
+    found: Boolean(customer),
+    e164: n.e164,
+    display: n.display,
+    customer: customer
+      ? { id: customer.id, name: customer.name, points_balance: customer.points_balance }
+      : undefined,
+  };
+}
+
+export type LoyaltyCustomerResult =
+  | {
+      ok: true;
+      customer: { id: string; name: string | null; points_balance: number };
+      passSerial: string;
+      appleAvailable: boolean;
+      googleAvailable: boolean;
+    }
+  | { ok: false; error: string };
+
+/** Crée la carte (staff) pour un nouveau client au comptoir. */
+export async function createLoyaltyCustomer(
+  phone: string,
+  name: string,
+): Promise<LoyaltyCustomerResult> {
+  const staff = await requireStaff();
+  if (!name.trim()) return { ok: false, error: "Prénom requis." };
+  let n;
+  try {
+    n = normalizePhone(phone, staff.cafe.country_default);
+  } catch {
+    return { ok: false, error: "Numéro de téléphone invalide." };
+  }
+  const customer = await findOrCreateCustomer({
+    cafeId: staff.cafe.id,
+    e164: n.e164,
+    display: n.display,
+    name: name.trim(),
+  });
+  const passSerial = await mintPassSerial(customer.id);
+  return {
+    ok: true,
+    customer: { id: customer.id, name: customer.name, points_balance: customer.points_balance },
+    passSerial,
+    appleAvailable: appleWalletConfigured(),
+    googleAvailable: googleWalletConfigured(),
+  };
+}
+
+/**
+ * Crédite les points d'un achat payé en personne (le staff saisit le montant).
+ * Points = floor(montant × points_per_currency). Même RPC qu'un futur POS.
+ */
+export async function creditInStorePurchase(
+  customerId: string,
+  amountCents: number,
+): Promise<RedeemResult> {
+  const staff = await requireStaff();
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    return { ok: false, error: "Montant invalide." };
+  }
+  const { data: customer } = await serviceClient()
+    .from("customers")
+    .select("cafe_id")
+    .eq("id", customerId)
+    .maybeSingle();
+  if (!customer || customer.cafe_id !== staff.cafe.id) {
+    return { ok: false, error: "Client hors de votre café." };
+  }
+
+  const { data, error } = await serviceClient().rpc("credit_purchase", {
+    p_customer_id: customerId,
+    p_amount_cents: Math.round(amountCents),
+  });
+  if (error) return { ok: false, error: "Crédit impossible." };
 
   await syncPass(customerId);
   return { ok: true, newBalance: data?.[0]?.points_balance ?? 0 };

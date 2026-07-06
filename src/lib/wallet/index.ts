@@ -2,7 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { serviceClient } from "@/lib/supabase/service";
 import { getCafeById, type Cafe } from "@/lib/cafe";
-import { getCustomerById } from "@/lib/data/customers";
+import { getCustomerById, getCustomerByPassSerial } from "@/lib/data/customers";
 import { patchGooglePoints, issueGooglePass } from "@/lib/wallet/google";
 import { buildPkpass, pushPassUpdate } from "@/lib/wallet/apple";
 import {
@@ -12,6 +12,24 @@ import {
 import type { Tables } from "@/types/supabase";
 
 export type PassPlatform = Tables<"customers">["pass_platform"];
+
+/**
+ * Attribue un pass_serial (uuid) au client s'il n'en a pas, SANS fixer de
+ * plateforme (l'inscription choisit Apple ou Google ensuite). Renvoie le serial.
+ */
+export async function mintPassSerial(customerId: string): Promise<string> {
+  const customer = await getCustomerById(customerId);
+  if (!customer) throw new Error("customer_not_found");
+  if (customer.pass_serial) return customer.pass_serial;
+
+  const serial = crypto.randomUUID();
+  const { error } = await serviceClient()
+    .from("customers")
+    .update({ pass_serial: serial })
+    .eq("id", customerId);
+  if (error) throw error;
+  return serial;
+}
 
 /** Attribue un pass_serial (uuid) au client si absent, et fixe la plateforme. */
 export async function ensurePassSerial(
@@ -96,6 +114,41 @@ export async function issueGoogleForToken(
   trackToken: string,
 ): Promise<string | null> {
   const resolved = await customerFromTrackToken(trackToken);
+  if (!resolved) return null;
+  const customer = await ensurePassSerial(resolved.customer.id, "google");
+  return issueGooglePass(resolved.cafe, customer);
+}
+
+/** Résout le café + client à partir du pass_serial (émission hors commande). */
+async function resolveBySerial(
+  passSerial: string,
+): Promise<{ cafe: Cafe; customer: Tables<"customers"> } | null> {
+  const customer = await getCustomerByPassSerial(passSerial);
+  if (!customer) return null;
+  const cafe = await getCafeById(customer.cafe_id);
+  if (!cafe) return null;
+  return { cafe, customer };
+}
+
+/**
+ * Émet un pass Apple pour un `pass_serial` (parcours d'inscription en boutique,
+ * sans commande). Fixe la plateforme sur 'apple'.
+ */
+export async function issueAppleForSerial(
+  passSerial: string,
+): Promise<{ cafe: Cafe; buffer: Buffer } | null> {
+  const resolved = await resolveBySerial(passSerial);
+  if (!resolved) return null;
+  const customer = await ensurePassSerial(resolved.customer.id, "apple");
+  const buffer = await buildPkpass(resolved.cafe, customer);
+  return { cafe: resolved.cafe, buffer };
+}
+
+/** Émet un pass Google pour un `pass_serial` (inscription en boutique). */
+export async function issueGoogleForSerial(
+  passSerial: string,
+): Promise<string | null> {
+  const resolved = await resolveBySerial(passSerial);
   if (!resolved) return null;
   const customer = await ensurePassSerial(resolved.customer.id, "google");
   return issueGooglePass(resolved.cafe, customer);

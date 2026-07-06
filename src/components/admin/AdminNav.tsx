@@ -9,7 +9,8 @@ const LINKS = [
   { href: "/admin/orders", label: "Commandes" },
   { href: "/admin/menu", label: "Menu" },
   { href: "/admin/slots", label: "Créneaux" },
-  { href: "/admin/scan", label: "Scan fidélité" },
+  { href: "/admin/loyalty", label: "Fidélité caisse" },
+  { href: "/admin/scan", label: "Scan récompense" },
 ];
 
 export function AdminNav({ cafeName }: { cafeName: string }) {
