@@ -42,3 +42,6 @@ service-account*.json
 
 # TS build info
 tsconfig.tsbuildinfo
+
+# Deploy secrets (local only)
+deploy/.env.deploy
