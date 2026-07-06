@@ -2,6 +2,33 @@
 
 Suivi vivant. fait / en cours / à faire / point d'attention.
 
+## Storefront photo-forward (jour 2)
+- ✅ Cartes produit orientées photo (`MenuBrowser`) : `image_url` (repli dégradé +
+  monogramme), badge « Nouveau », puces allergènes, +/stepper, état rupture.
+- ✅ Upload photo back-office : bucket Storage `menu-images` (migration 0006, défensive),
+  action `uploadMenuImage` (service role, scopé café), champ photo + URL dans l'éditeur menu.
+
+## Backlog V2 — Options / Upsell (planifié, non construit)
+Objectif : fiche produit « façon Cojean » (choix, suppléments, suggestions).
+- **Schéma (migration future)** :
+  - `menu_option_groups(id, cafe_id, menu_item_id, name, min_select, max_select, sort_order)`
+    — ex. « Choisissez votre pain » (min 1 / max 1).
+  - `menu_options(id, group_id, name, price_delta_cents, is_default, sort_order)`
+    — ex. « Sans gluten +1.50 ».
+  - `menu_item_upsells(cafe_id, menu_item_id, suggested_item_id, sort_order)`
+    — « souvent pris ensemble » / « un dessert avec ça ? ».
+- **Commande** : `order_items.options_snapshot jsonb` (choix figés) + prix unitaire ajusté
+  des deltas. Le calcul TVA serveur (`priceOrder`) intègre les deltas d'options.
+- **UI** : fiche produit `/[cafeSlug]/item/[id]` (groupes = radios/checkboxes selon min/max,
+  upsells en bas), remplace l'ajout direct pour les articles à options.
+- **Back-office** : CRUD des groupes/options + gestion des suggestions.
+- **RLS/scoping** : tout scopé `cafe_id` comme le reste ; validation serveur des options
+  choisies (jamais de prix client).
+- Effort estimé : ~1 migration + fiche produit + calcul prix + CRUD back-office.
+
+---
+
+
 ## Ajout — Fidélité en boutique (jour 2)
 - ✅ **Inscription self-service** : page publique `/[slug]/join` (prénom + tél + consentement)
   → `enrollCustomer` (`src/actions/enroll.ts`) → carte + boutons Wallet. QR comptoir à
