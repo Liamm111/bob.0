@@ -48,9 +48,10 @@ export async function createOrderPaymentIntent(
     {
       amount: input.amountCents,
       currency: input.currency.toLowerCase(),
-      // TWINT (Suisse) + carte. `automatic_payment_methods` pourrait suffire,
-      // mais on liste explicitement pour garantir TWINT.
-      payment_method_types: ["card", "twint"],
+      // Méthodes automatiques : Stripe propose ce que le compte supporte —
+      // carte partout (test inclus), + TWINT dès que le compte live CH l'active.
+      // (Évite l'erreur si TWINT n'est pas dispo, ex. en mode test.)
+      automatic_payment_methods: { enabled: true },
       metadata: {
         order_id: input.orderId,
         cafe_id: input.cafeId,
