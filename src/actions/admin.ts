@@ -92,6 +92,7 @@ const MenuItemSchema = z.object({
   price_cents: z.number().int().min(0),
   vat_rate: z.number(),
   is_available: z.boolean(),
+  image_url: z.string().url().nullable().optional(),
   sort_order: z.number().int().optional(),
 });
 
@@ -110,6 +111,7 @@ export async function upsertMenuItem(
     vat_rate: parsed.vat_rate,
     is_available: parsed.is_available,
     category_id: parsed.category_id ?? null,
+    image_url: parsed.image_url ?? null,
     sort_order: parsed.sort_order ?? 0,
   };
   if (parsed.id) row.id = parsed.id;
@@ -117,6 +119,41 @@ export async function upsertMenuItem(
   const { error } = await supabase.from("menu_items").upsert(row);
   if (error) throw error;
   revalidatePath("/admin/menu");
+  revalidatePath("/[cafeSlug]", "page");
+}
+
+/**
+ * Upload d'une photo d'article vers le bucket Storage `menu-images`, puis
+ * renvoie l'URL publique. Scopé au café du staff. L'écriture passe par le
+ * service role (le bucket n'accepte pas d'écriture anon/authenticated).
+ */
+export async function uploadMenuImage(
+  formData: FormData,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const staff = await requireStaff();
+  const itemId = String(formData.get("itemId") ?? "");
+  const file = formData.get("file");
+  if (!itemId || !(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Fichier manquant." };
+  }
+  if (!file.type.startsWith("image/")) {
+    return { ok: false, error: "Le fichier doit être une image." };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { ok: false, error: "Image trop lourde (max 5 Mo)." };
+  }
+
+  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${staff.cafe.id}/${itemId}-${Date.now()}.${ext}`;
+  const service = serviceClient();
+
+  const { error: upErr } = await service.storage
+    .from("menu-images")
+    .upload(path, file, { contentType: file.type, upsert: true });
+  if (upErr) return { ok: false, error: "Upload impossible (Storage configuré ?)." };
+
+  const { data } = service.storage.from("menu-images").getPublicUrl(path);
+  return { ok: true, url: data.publicUrl };
 }
 
 export async function toggleItemAvailability(

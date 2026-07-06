@@ -3,7 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/pricing";
-import { toggleItemAvailability, upsertMenuItem } from "@/actions/admin";
+import {
+  toggleItemAvailability,
+  upsertMenuItem,
+  uploadMenuImage,
+} from "@/actions/admin";
 import type { Tables } from "@/types/supabase";
 
 type Item = Tables<"menu_items">;
@@ -32,6 +36,7 @@ export function MenuManager({
         price_cents: Number(form.price_cents ?? 0),
         vat_rate: Number(form.vat_rate ?? 2.6),
         is_available: form.is_available ?? true,
+        image_url: form.image_url ?? null,
         sort_order: form.sort_order ?? 0,
       });
       setEditing(null);
@@ -39,16 +44,21 @@ export function MenuManager({
     });
   }
 
+  function startNew() {
+    setEditing({
+      id: crypto.randomUUID(), // id anticipé → l'upload photo marche avant la 1re sauvegarde
+      name: "",
+      price_cents: 0,
+      vat_rate: 2.6,
+      is_available: true,
+    });
+  }
+
   return (
     <div>
       <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
         <h1 style={{ margin: 0 }}>Menu</h1>
-        <button
-          className="btn"
-          onClick={() =>
-            setEditing({ name: "", price_cents: 0, vat_rate: 2.6, is_available: true })
-          }
-        >
+        <button className="btn" onClick={startNew}>
           + Nouvel article
         </button>
       </div>
@@ -113,10 +123,60 @@ function ItemForm({
   onSave: (form: Partial<Item>) => void;
 }) {
   const [form, setForm] = useState<Partial<Item>>(item);
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
   const priceInput = ((form.price_cents ?? 0) / 100).toString();
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !form.id) return;
+    setUploadErr(null);
+    setUploading(true);
+    const fd = new FormData();
+    fd.set("itemId", form.id);
+    fd.set("file", file);
+    const res = await uploadMenuImage(fd);
+    setUploading(false);
+    if (res.ok) setForm((f) => ({ ...f, image_url: res.url }));
+    else setUploadErr(res.error);
+  }
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
+      {/* Photo de l'article */}
+      <div className="field">
+        <label>Photo</label>
+        <div className="row" style={{ gap: 12, alignItems: "flex-start" }}>
+          <div
+            style={{
+              width: 96,
+              height: 72,
+              borderRadius: 10,
+              flex: "0 0 auto",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              background: form.image_url
+                ? `center/cover no-repeat url(${form.image_url})`
+                : "linear-gradient(140deg,#c69a5e,#9a6f3c)",
+              border: "1px solid var(--brand-border)",
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <input type="file" accept="image/*" onChange={onPickFile} disabled={uploading} />
+            <input
+              style={{ marginTop: 8 }}
+              placeholder="…ou coller une URL d'image"
+              value={form.image_url ?? ""}
+              onChange={(e) => setForm({ ...form, image_url: e.target.value || null })}
+            />
+            {uploading && <div className="muted" style={{ fontSize: "0.8rem", marginTop: 6 }}>Envoi…</div>}
+            {uploadErr && (
+              <div style={{ color: "#c0392b", fontSize: "0.8rem", marginTop: 6 }}>{uploadErr}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="field">
         <label>Nom</label>
         <input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} />
