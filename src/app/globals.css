@@ -1,13 +1,12 @@
 /* =========================================================
-   Polices de marque : Anaktoria (titres) + Gotham (texte & chiffres).
-   Ce sont des polices sous licence — déposez les fichiers dans
-   /public/fonts/ (voir public/fonts/README.md). Tant qu'ils sont absents,
-   on retombe proprement sur des piles serif/sans (aucune erreur de build).
+   Polices de marque (sous licence, fournies par le café) :
+   Anaktoria → titres · Gotham (Book/Medium) → texte & chiffres.
+   Fichiers .woff2 dans /public/fonts/. Repli serif/sans si absents.
    ========================================================= */
 @font-face {
   font-family: "Anaktoria";
   src: url("/fonts/Anaktoria.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 400 700; /* mono-graisse : couvre 400–700 */
   font-display: swap;
 }
 @font-face {
@@ -19,7 +18,7 @@
 @font-face {
   font-family: "Gotham";
   src: url("/fonts/Gotham-Medium.woff2") format("woff2");
-  font-weight: 600 700;
+  font-weight: 500 700; /* Medium sert pour 500/600/700 (labels, gras) */
   font-display: swap;
 }
 
